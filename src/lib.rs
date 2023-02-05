@@ -3,6 +3,7 @@ use bevy::prelude::*;
 // Represents the state of game
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum GameState {
+    BootLoading,
     Boot,
     Menu,
     Game,
@@ -16,3 +17,4 @@ fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands
 }
 
 pub mod boot;
+pub mod fadeshader;
