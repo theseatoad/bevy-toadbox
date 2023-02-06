@@ -1,7 +1,5 @@
-use crate::{despawn_screen, fadeshader::FadeMaterial, GameState};
-use bevy::{
-    core_pipeline::clear_color::ClearColorConfig, prelude::*, sprite::MaterialMesh2dBundle,
-};
+use crate::{despawn_screen, GameState};
+use bevy::{core_pipeline::clear_color::ClearColorConfig, prelude::*};
 use bevy_asset_loader::prelude::*;
 pub struct BootPlugin;
 
@@ -26,6 +24,8 @@ pub struct BootSettings {
     pub length: f32,
     /// Amount of time to wait before playing audio.
     pub audio_delay: f32,
+    /// Scale of the background sprite.
+    pub bg_scale: Vec3,
 }
 
 impl Default for BootSettings {
@@ -34,6 +34,7 @@ impl Default for BootSettings {
             boot_background_color: Color::GREEN,
             length: 3.0,
             audio_delay: 1.0,
+            bg_scale: Vec3::ONE,
         }
     }
 }
@@ -48,7 +49,8 @@ impl Plugin for BootPlugin {
             .add_system_set(
                 SystemSet::on_update(GameState::Boot)
                     .with_system(core_timer)
-                    .with_system(audio_delay_timer),
+                    .with_system(audio_delay_timer)
+                    .with_system(fade_timer),
             )
             // When exiting the state, despawn everything that was spawned for this screen
             .add_system_set(
@@ -68,18 +70,9 @@ struct BootTimer(Timer);
 struct AudioDelayTimer(Timer);
 
 #[derive(Resource, Deref, DerefMut)]
-struct FadeInTimer(Timer);
+struct FadeTimer(Timer);
 
-#[derive(Resource, Deref, DerefMut)]
-struct FadeOutTimer(Timer);
-
-fn setup(
-    mut commands: Commands,
-    settings: Res<BootSettings>,
-    assets: Res<BootAssets>,
-    mut materials: ResMut<Assets<FadeMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-) {
+fn setup(mut commands: Commands, settings: Res<BootSettings>, assets: Res<BootAssets>) {
     commands
         .spawn(Camera2dBundle {
             camera_2d: Camera2d {
@@ -115,29 +108,32 @@ fn setup(
             });
         });
 
-    commands.spawn(MaterialMesh2dBundle {
-        mesh: meshes.add(Mesh::from(shape::Quad::default())).into(),
-        transform: Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3 {
-            x: 600.0,
-            y: 500.0,
-            z: 1.0,
-        }),
-        material: materials.add(FadeMaterial {
-            speed: 0.5,
-            mult: 0.5,
-            min: 0.0,
-            max: 1.0,
+    commands
+        .spawn(SpriteBundle {
             texture: assets.boot_background_asset.clone(),
-        }),
-        ..default()
-    });
-    // Insert the timer as a resource
+            transform: Transform::from_xyz(0., 0., 5.).with_scale(settings.bg_scale),
+            sprite: Sprite {
+                color: Color::Rgba {
+                    red: 0.0,
+                    green: 0.0,
+                    blue: 0.0,
+                    alpha: 0.0,
+                },
+                ..default()
+            },
+            ..default()
+        })
+        .insert(OnBootScreen);
     commands.insert_resource(BootTimer(Timer::from_seconds(
         settings.length,
         TimerMode::Once,
     )));
     commands.insert_resource(AudioDelayTimer(Timer::from_seconds(
         settings.audio_delay,
+        TimerMode::Once,
+    )));
+    commands.insert_resource(FadeTimer(Timer::from_seconds(
+        settings.length,
         TimerMode::Once,
     )));
 }
@@ -163,5 +159,24 @@ fn audio_delay_timer(
         let music = assets.boot_audio_asset.clone();
         audio.play(music);
         timer.pause();
+    }
+}
+
+fn fade_timer(
+    time: Res<Time>,
+    mut timer: ResMut<FadeTimer>,
+    mut sprites: Query<&mut Sprite>,
+    settings: Res<BootSettings>,
+) {
+    timer.tick(time.delta());
+    let normalized_time = timer.elapsed_secs() / settings.length;
+    for mut sprite in sprites.iter_mut() {
+        if normalized_time < 0.2 {
+            sprite.color.set_a(1.0 - (normalized_time * 5.0));
+        } else if normalized_time > 0.8 {
+            sprite.color.set_a((normalized_time - 0.75) * 4.0);
+        } else {
+            sprite.color.set_a(0.0);
+        }
     }
 }
