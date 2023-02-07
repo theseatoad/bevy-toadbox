@@ -11,8 +11,8 @@ repository = "https://github.com/theseatoad/bevy-toadbox"
 homepage = "https://github.com/theseatoad/bevy-toadbox"
 
 [dependencies]
-bevy = { version = "0.9.1", features = ["dynamic"] }
-bevy_asset_loader = "0.14.1"
+bevy = { git = "https://github.com/bevyengine/bevy", branch = "main" }
+bevy_asset_loader = { git = "https://github.com/NiklasEi/bevy_asset_loader", branch = "bevy_main" }
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
@@ -29,3 +29,7 @@ path = "examples/bootscreen.rs"
 [[example]]
 name = "fadeshader"
 path = "examples/fadeshader.rs"
+
+[[example]]
+name = "mainmenu"
+path = "examples/mainmenu.rs"

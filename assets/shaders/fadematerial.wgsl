@@ -19,7 +19,7 @@ fn fragment(
     #import bevy_pbr::mesh_vertex_output
     @builtin(position) coord : vec4<f32>
 ) -> @location(0) vec4<f32> {
-    var t_1 = sin(globals.time) * material.mult;
+    var t_1 = sin(globals.time * material.mult);
     t_1 = t_1 * material.speed;
     var texture = textureSample(base_color_texture, base_color_sampler,uv);
     var alpha = min(t_1,material.max);

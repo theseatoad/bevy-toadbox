@@ -31,10 +31,10 @@ fn setup(
         mesh: meshes.add(Mesh::from(shape::Quad::default())).into(),
         transform: Transform::default().with_scale(Vec3::splat(128.)),
         material: materials.add(FadeMaterial {
-            speed: 1.0,
-            mult: 3.0,
-            min: 0.2,
-            max: 0.8,
+            speed: 10.0,
+            mult: 20.0,
+            min: 0.0,
+            max: 1.0,
             texture: asset_server.load("boot/boot-visual.png"),
         }),
         ..default()
